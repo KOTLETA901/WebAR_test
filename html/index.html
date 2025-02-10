@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAR Image Tracking</title>
+    
+    <script>
+        console.log("🔵 Загрузка A-Frame и MindAR...");
+    </script>
+
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js" onerror="console.error('❌ Ошибка загрузки aframe.min.js')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js" onerror="console.error('❌ Ошибка загрузки mindar-image-aframe.prod.js')"></script>
+
+    <style>
+        /* Убираем отступы и делаем камеру на весь экран */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        a-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("✅ DOM загружен");
+        });
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                console.log("✅ Камера доступна");
+            })
+            .catch((err) => console.error("❌ Ошибка доступа к камере:", err));
+
+        AFRAME.registerComponent('debugger', {
+            init: function () {
+                console.log("🟡 Инициализация A-Frame...");
+                this.el.sceneEl.addEventListener('loaded', () => {
+                    console.log("✅ A-Frame сцена полностью инициализирована");
+                });
+            }
+        });
+
+        // Автоматический ресайз сцены
+        window.addEventListener("resize", () => {
+            const scene = document.querySelector("a-scene");
+            if (scene) {
+                scene.style.width = `${window.innerWidth}px`;
+                scene.style.height = `${window.innerHeight}px`;
+            }
+        });
+    </script>
+
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" embedded debugger>
+        <a-camera mindar-camera="true" position="0 0 0" look-controls-enabled="false" cursor="rayOrigin: mouse"></a-camera>
+
+        <a-assets>
+            <video id="video1" src="video1.mp4" loop playsinline></video>
+            <video id="video2" src="video2.mp4" loop playsinline></video>
+        </a-assets>
+
+        <a-entity mindar-image-targets>
+            <!-- Первый маркер -->
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60" rotation="0 0 0"></a-video>
+            </a-entity>
+
+            <!-- Второй маркер -->
+            <a-entity mindar-image-target="targetIndex: 1">
+                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1" rotation="0 0 90"></a-video>
+            </a-entity>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("🟡 Настройка видео...");
+
+            const video1 = document.getElementById("video1");
+            const video2 = document.getElementById("video2");
+
+            video1.oncanplay = () => console.log("✅ Видео 1 загружено");
+            video2.oncanplay = () => console.log("✅ Видео 2 загружено");
+
+            const marker1 = document.querySelector('[mindar-image-target="targetIndex: 0"]');
+            const marker2 = document.querySelector('[mindar-image-target="targetIndex: 1"]');
+
+            marker1.addEventListener("targetFound", () => {
+                console.log("✅ Маркер 1 найден! Воспроизводим видео 1...");
+                video1.play();
+                video1.muted = false;
+            });
+
+            marker1.addEventListener("targetLost", () => {
+                console.log("🛑 Маркер 1 потерян! Останавливаем видео 1...");
+                video1.pause();
+            });
+
+            marker2.addEventListener("targetFound", () => {
+                console.log("✅ Маркер 2 найден! Воспроизводим видео 2...");
+                video2.play();
+                video2.muted = false;
+            });
+
+            marker2.addEventListener("targetLost", () => {
+                console.log("🛑 Маркер 2 потерян! Останавливаем видео 2...");
+                video2.pause();
+            });
+        });
+    </script>
+</body>
+</html>
