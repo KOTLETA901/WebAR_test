@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js" onerror="console.error('❌ Ошибка загрузки mindar-image-aframe.prod.js')"></script>
 
     <style>
-        /* Убираем отступы и делаем камеру на весь экран */
         html, body {
             margin: 0;
             padding: 0;
@@ -38,7 +37,7 @@
         });
 
         navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
+            .then(() => {
                 console.log("✅ Камера доступна");
             })
             .catch((err) => console.error("❌ Ошибка доступа к камере:", err));
@@ -52,7 +51,25 @@
             }
         });
 
-        // Автоматический ресайз сцены
+        AFRAME.registerComponent('smooth-tracking', {
+            schema: { lerpFactor: { type: 'number', default: 0.15 } },
+
+            init: function () {
+                this.targetPosition = new THREE.Vector3();
+                this.targetRotation = new THREE.Quaternion();
+            },
+
+            tick: function () {
+                const object3D = this.el.object3D;
+
+                this.targetPosition.lerp(object3D.position, this.data.lerpFactor);
+                this.targetRotation.slerp(object3D.quaternion, this.data.lerpFactor);
+
+                object3D.position.copy(this.targetPosition);
+                object3D.quaternion.copy(this.targetRotation);
+            }
+        });
+
         window.addEventListener("resize", () => {
             const scene = document.querySelector("a-scene");
             if (scene) {
@@ -71,14 +88,14 @@
         </a-assets>
 
         <a-entity mindar-image-targets>
-            <!-- Первый маркер -->
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60" rotation="0 0 0"></a-video>
+                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60"
+                    rotation="0 0 0" smooth-tracking="lerpFactor: 0.2"></a-video>
             </a-entity>
 
-            <!-- Второй маркер -->
             <a-entity mindar-image-target="targetIndex: 1">
-                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1" rotation="0 0 90"></a-video>
+                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1"
+                    rotation="0 0 90" smooth-tracking="lerpFactor: 0.2"></a-video>
             </a-entity>
         </a-entity>
     </a-scene>
