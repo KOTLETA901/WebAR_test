@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js" onerror="console.error('❌ Ошибка загрузки mindar-image-aframe.prod.js')"></script>
 
     <style>
+        /* Полноэкранный режим */
         html, body {
             margin: 0;
             padding: 0;
@@ -28,16 +29,34 @@
             width: 100vw !important;
             height: 100vh !important;
         }
+
+        /* Кнопка активации звука */
+        #start-video {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #ff5722;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- Кнопка для активации видео со звуком -->
+    <button id="start-video">Включить видео</button>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             console.log("✅ DOM загружен");
         });
 
         navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => {
+            .then((stream) => {
                 console.log("✅ Камера доступна");
             })
             .catch((err) => console.error("❌ Ошибка доступа к камере:", err));
@@ -51,25 +70,7 @@
             }
         });
 
-        AFRAME.registerComponent('smooth-tracking', {
-            schema: { lerpFactor: { type: 'number', default: 0.15 } },
-
-            init: function () {
-                this.targetPosition = new THREE.Vector3();
-                this.targetRotation = new THREE.Quaternion();
-            },
-
-            tick: function () {
-                const object3D = this.el.object3D;
-
-                this.targetPosition.lerp(object3D.position, this.data.lerpFactor);
-                this.targetRotation.slerp(object3D.quaternion, this.data.lerpFactor);
-
-                object3D.position.copy(this.targetPosition);
-                object3D.quaternion.copy(this.targetRotation);
-            }
-        });
-
+        // Автоматический ресайз сцены
         window.addEventListener("resize", () => {
             const scene = document.querySelector("a-scene");
             if (scene) {
@@ -88,14 +89,14 @@
         </a-assets>
 
         <a-entity mindar-image-targets>
+            <!-- Первый маркер -->
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60"
-                    rotation="0 0 0" smooth-tracking="lerpFactor: 0.2"></a-video>
+                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60" rotation="0 0 0"></a-video>
             </a-entity>
 
+            <!-- Второй маркер -->
             <a-entity mindar-image-target="targetIndex: 1">
-                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1"
-                    rotation="0 0 90" smooth-tracking="lerpFactor: 0.2"></a-video>
+                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1" rotation="0 0 90"></a-video>
             </a-entity>
         </a-entity>
     </a-scene>
@@ -115,8 +116,8 @@
 
             marker1.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 1 найден! Воспроизводим видео 1...");
-                video1.play();
                 video1.muted = false;
+                video1.play();
             });
 
             marker1.addEventListener("targetLost", () => {
@@ -126,13 +127,25 @@
 
             marker2.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 2 найден! Воспроизводим видео 2...");
-                video2.play();
                 video2.muted = false;
+                video2.play();
             });
 
             marker2.addEventListener("targetLost", () => {
                 console.log("🛑 Маркер 2 потерян! Останавливаем видео 2...");
                 video2.pause();
+            });
+
+            // Активация видео по кнопке для iOS
+            document.getElementById("start-video").addEventListener("click", () => {
+                console.log("🎵 Разрешение на звук получено!");
+                video1.muted = false;
+                video2.muted = false;
+
+                video1.play().catch(err => console.error("Ошибка воспроизведения видео 1:", err));
+                video2.play().catch(err => console.error("Ошибка воспроизведения видео 2:", err));
+
+                document.getElementById("start-video").style.display = "none"; // Скрываем кнопку после нажатия
             });
         });
     </script>
