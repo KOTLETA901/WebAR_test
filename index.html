@@ -55,11 +55,12 @@
             console.log("✅ DOM загружен");
         });
 
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
-                console.log("✅ Камера доступна");
-            })
-            .catch((err) => console.error("❌ Ошибка доступа к камере:", err));
+
+navigator.mediaDevices.getUserMedia({ 
+    video: { width: { ideal: 1920 }, height: { ideal: 1080 } }
+}).then((stream) => {
+    console.log("✅ Камера с высоким разрешением активирована");
+}).catch((err) => console.error("❌ Ошибка доступа к камере:", err));
 
         AFRAME.registerComponent('debugger', {
             init: function () {
