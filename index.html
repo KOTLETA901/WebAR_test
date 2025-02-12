@@ -4,63 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebAR Image Tracking</title>
-    
+
     <script>
         console.log("🔵 Загрузка A-Frame и MindAR...");
     </script>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js" onerror="console.error('❌ Ошибка загрузки aframe.min.js')"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js" onerror="console.error('❌ Ошибка загрузки mindar-image-aframe.prod.js')"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        /* Полноэкранный режим */
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        a-scene {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw !important;
-            height: 100vh !important;
-        }
-
-        /* Кнопка активации звука */
-        #start-video {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 100;
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #ff5722;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: block;
-        }
+        html, body { margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100vh; }
+        a-scene { position: fixed; top: 0; left: 0; width: 100vw !important; height: 100vh !important; }
     </style>
 </head>
 <body>
-    <!-- Кнопка для активации видео со звуком -->
-    <button id="start-video">Включить видео</button>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             console.log("✅ DOM загружен");
         });
-
-
-navigator.mediaDevices.getUserMedia({ 
-    video: { width: { ideal: 1920 }, height: { ideal: 1080 } }
-}).then((stream) => {
-    console.log("✅ Камера с высоким разрешением активирована");
-}).catch((err) => console.error("❌ Ошибка доступа к камере:", err));
 
         AFRAME.registerComponent('debugger', {
             init: function () {
@@ -81,25 +42,21 @@ navigator.mediaDevices.getUserMedia({
         });
     </script>
 
-    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" embedded debugger color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false">
-
-        <a-camera mindar-camera="true" position="0 0 0" look-controls="enabled: false"" cursor="rayOrigin: mouse"></a-camera>
-
+    <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind; resolution: 1280" embedded debugger>
+        <a-camera mindar-camera="true" position="0 0 0" look-controls-enabled="false" cursor="rayOrigin: mouse"></a-camera>
 
         <a-assets>
-            <video id="video1" src="video1.mp4" preload="auto" playsinline></video>
+            <video id="video1" src="video1.mp4" loop playsinline></video>
             <video id="video2" src="video2.mp4" loop playsinline></video>
         </a-assets>
 
         <a-entity mindar-image-targets>
-            <!-- Первый маркер -->
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60" rotation="0 0 0"></a-video>
+                <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60"></a-video>
             </a-entity>
 
-            <!-- Второй маркер -->
             <a-entity mindar-image-target="targetIndex: 1">
-                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1" rotation="0 0 90"></a-video>
+                <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1"></a-video>
             </a-entity>
         </a-entity>
     </a-scene>
@@ -119,8 +76,8 @@ navigator.mediaDevices.getUserMedia({
 
             marker1.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 1 найден! Воспроизводим видео 1...");
+                setTimeout(() => video1.play(), 100);
                 video1.muted = false;
-                video1.play();
             });
 
             marker1.addEventListener("targetLost", () => {
@@ -130,25 +87,13 @@ navigator.mediaDevices.getUserMedia({
 
             marker2.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 2 найден! Воспроизводим видео 2...");
+                setTimeout(() => video2.play(), 100);
                 video2.muted = false;
-                video2.play();
             });
 
             marker2.addEventListener("targetLost", () => {
                 console.log("🛑 Маркер 2 потерян! Останавливаем видео 2...");
                 video2.pause();
-            });
-
-            // Активация видео по кнопке для iOS
-            document.getElementById("start-video").addEventListener("click", () => {
-                console.log("🎵 Разрешение на звук получено!");
-                video1.muted = false;
-                video2.muted = false;
-
-                video1.play().catch(err => console.error("Ошибка воспроизведения видео 1:", err));
-                video2.play().catch(err => console.error("Ошибка воспроизведения видео 2:", err));
-
-                document.getElementById("start-video").style.display = "none"; // Скрываем кнопку после нажатия
             });
         });
     </script>
