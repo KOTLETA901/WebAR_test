@@ -30,12 +30,10 @@
             height: 100vh !important;
         }
 
-        /* Прячем встроенный видеоплеер на Android */
         video {
             display: none;
         }
 
-        /* Кнопка для ручного запуска видео на iOS/Android */
         #playButton {
             position: absolute;
             top: 50%;
@@ -93,12 +91,10 @@
         </a-assets>
 
         <a-entity mindar-image-targets>
-            <!-- Первый маркер -->
             <a-entity mindar-image-target="targetIndex: 0">
                 <a-video id="video1-entity" src="#video1" position="0 0 0" width="1" height="0.60" rotation="0 0 0"></a-video>
             </a-entity>
 
-            <!-- Второй маркер -->
             <a-entity mindar-image-target="targetIndex: 1">
                 <a-video id="video2-entity" src="#video2" position="0 0 0" width="1.77" height="1" rotation="0 0 90"></a-video>
             </a-entity>
@@ -130,17 +126,16 @@
                 }
             }
 
-            // Показываем кнопку, если пользователь должен кликнуть
             document.addEventListener("click", enableVideoPlayback);
             document.addEventListener("touchstart", enableVideoPlayback);
             playButton.addEventListener("click", enableVideoPlayback);
 
-            // Управление воспроизведением при обнаружении маркеров
             marker1.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 1 найден! Воспроизводим видео 1...");
                 enableVideoPlayback();
                 video1.muted = false;
                 video1.play();
+                updateTexture(video1, "#video1-entity");
             });
 
             marker1.addEventListener("targetLost", () => {
@@ -153,6 +148,7 @@
                 enableVideoPlayback();
                 video2.muted = false;
                 video2.play();
+                updateTexture(video2, "#video2-entity");
             });
 
             marker2.addEventListener("targetLost", () => {
@@ -160,13 +156,30 @@
                 video2.pause();
             });
 
-            // Исправление для iOS/Android, если видео не запускается автоматически
+            function updateTexture(video, selector) {
+                setTimeout(() => {
+                    const entity = document.querySelector(selector);
+                    if (entity && entity.components.material) {
+                        entity.components.material.material.map.needsUpdate = true;
+                    }
+                }, 100);
+            }
+
             setTimeout(() => {
                 if (video1.paused && video2.paused) {
-                    console.log("⚠️ Видео не запустилось автоматически, требуется пользовательский клик.");
+                    console.log("⚠️ Видео не запустилось автоматически, требуется клик.");
                     playButton.style.display = "block";
                 }
             }, 2000);
+
+            // Обход бага WebGL на iOS
+            setTimeout(() => {
+                const sceneEl = document.querySelector("a-scene");
+                if (sceneEl && sceneEl.renderer && !sceneEl.renderer.context) {
+                    console.log("⚠️ WebGL сломан, перезапускаем сцену...");
+                    location.reload();
+                }
+            }, 3000);
         });
     </script>
 </body>
