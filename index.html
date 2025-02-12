@@ -13,13 +13,13 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js" onerror="console.error('❌ Ошибка загрузки mindar-image-aframe.prod.js')"></script>
 
     <style>
-        /* Полноэкранный режим */
         html, body {
             margin: 0;
             padding: 0;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            background: black;
         }
 
         a-scene {
@@ -30,26 +30,29 @@
             height: 100vh !important;
         }
 
-        /* Кнопка активации звука */
-        #start-video {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 100;
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #ff5722;
+        /* Прячем встроенный видеоплеер на Android */
+        video {
+            display: none;
+        }
+
+        /* Кнопка для ручного запуска видео на iOS/Android */
+        #playButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.8);
             color: white;
             border: none;
+            border-radius: 10px;
             cursor: pointer;
-            display: block;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Кнопка для активации видео со звуком -->
-    <button id="start-video">Включить видео</button>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             console.log("✅ DOM загружен");
@@ -70,7 +73,6 @@
             }
         });
 
-        // Автоматический ресайз сцены
         window.addEventListener("resize", () => {
             const scene = document.querySelector("a-scene");
             if (scene) {
@@ -80,12 +82,14 @@
         });
     </script>
 
+    <button id="playButton">Запустить видео</button>
+
     <a-scene mindar-image="imageTargetSrc: ./assets/targets.mind;" embedded debugger>
         <a-camera mindar-camera="true" position="0 0 0" look-controls-enabled="false" cursor="rayOrigin: mouse"></a-camera>
 
         <a-assets>
-            <video id="video1" src="video1.mp4" loop playsinline></video>
-            <video id="video2" src="video2.mp4" loop playsinline></video>
+            <video id="video1" src="video1.mp4" loop playsinline muted></video>
+            <video id="video2" src="video2.mp4" loop playsinline muted></video>
         </a-assets>
 
         <a-entity mindar-image-targets>
@@ -107,6 +111,7 @@
 
             const video1 = document.getElementById("video1");
             const video2 = document.getElementById("video2");
+            const playButton = document.getElementById("playButton");
 
             video1.oncanplay = () => console.log("✅ Видео 1 загружено");
             video2.oncanplay = () => console.log("✅ Видео 2 загружено");
@@ -114,8 +119,26 @@
             const marker1 = document.querySelector('[mindar-image-target="targetIndex: 0"]');
             const marker2 = document.querySelector('[mindar-image-target="targetIndex: 1"]');
 
+            let userInteracted = false;
+
+            function enableVideoPlayback() {
+                if (!userInteracted) {
+                    userInteracted = true;
+                    video1.play().catch(err => console.log("⚠️ Видео 1 не может автоматически запуститься:", err));
+                    video2.play().catch(err => console.log("⚠️ Видео 2 не может автоматически запуститься:", err));
+                    playButton.style.display = "none";
+                }
+            }
+
+            // Показываем кнопку, если пользователь должен кликнуть
+            document.addEventListener("click", enableVideoPlayback);
+            document.addEventListener("touchstart", enableVideoPlayback);
+            playButton.addEventListener("click", enableVideoPlayback);
+
+            // Управление воспроизведением при обнаружении маркеров
             marker1.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 1 найден! Воспроизводим видео 1...");
+                enableVideoPlayback();
                 video1.muted = false;
                 video1.play();
             });
@@ -127,6 +150,7 @@
 
             marker2.addEventListener("targetFound", () => {
                 console.log("✅ Маркер 2 найден! Воспроизводим видео 2...");
+                enableVideoPlayback();
                 video2.muted = false;
                 video2.play();
             });
@@ -136,17 +160,13 @@
                 video2.pause();
             });
 
-            // Активация видео по кнопке для iOS
-            document.getElementById("start-video").addEventListener("click", () => {
-                console.log("🎵 Разрешение на звук получено!");
-                video1.muted = false;
-                video2.muted = false;
-
-                video1.play().catch(err => console.error("Ошибка воспроизведения видео 1:", err));
-                video2.play().catch(err => console.error("Ошибка воспроизведения видео 2:", err));
-
-                document.getElementById("start-video").style.display = "none"; // Скрываем кнопку после нажатия
-            });
+            // Исправление для iOS/Android, если видео не запускается автоматически
+            setTimeout(() => {
+                if (video1.paused && video2.paused) {
+                    console.log("⚠️ Видео не запустилось автоматически, требуется пользовательский клик.");
+                    playButton.style.display = "block";
+                }
+            }, 2000);
         });
     </script>
 </body>
